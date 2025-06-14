@@ -1,11 +1,4 @@
 # Eucerin-nextjs-app
-<<<<<<< HEAD
-
-This is an app that recommends Eucerin products based on skin type surveyed.  
-=======
-This is an app that recommends Eucerin products based on skin type surveyed.
-=======
-# Eucerin-nextjs-app
 This is an app that recommends Eucerin products based on skin type surveyed.
 <<<<<<< HEAD
 =======
