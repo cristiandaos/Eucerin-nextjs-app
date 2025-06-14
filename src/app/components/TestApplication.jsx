@@ -12,6 +12,7 @@ export default function TestApplication() {
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [user, setUser] = useState(null);
+  const [quantities, setQuantities] = useState({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -58,6 +59,20 @@ export default function TestApplication() {
   const getRecommendedProducts = (skinType) => {
     return products.filter((p) => p.skinTypes.includes(skinType));
   };
+
+  const handleQuantityChange = (productId, delta) => {
+    setQuantities((prev) => ({
+      ...prev,
+      [productId]: Math.max(1, (prev[productId] || 1) + delta),
+    }));
+  };
+
+  const handleAddToCart = (product) => {
+    const quantity = quantities[product.id] || 1;
+    console.log("Añadido al carrito:", product.name, "Cantidad:", quantity);
+    // Lógica para guardar el carrito en Firestore
+  };
+
   if (!user) {
     return (
       <div className="relative w-full h-screen overflow-hidden">
@@ -103,11 +118,35 @@ export default function TestApplication() {
           {recommended.map((prod) => (
             <div
               key={prod.id}
-              className="border p-4 rounded shadow-sm bg-white"
+              className="border p-4 rounded shadow-sm bg-white space-y-2"
             >
               <h4 className="text-lg text-red-900 font-bold">{prod.name}</h4>
               <p className="text-sm text-gray-600">{prod.description}</p>
-              {/* Btn para Añadir a Carrito */}
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleQuantityChange(prod.id, -1)}
+                  className="px-2 py-1 bg-gray-400 rounded hover:bg-gray-500"
+                >
+                  -
+                </button>
+                <span className="px-3 text-gray-400">
+                  {quantities[prod.id] || 1}
+                </span>
+                <button
+                  onClick={() => handleQuantityChange(prod.id, 1)}
+                  className="px-2 py-1 bg-gray-400 rounded hover:bg-gray-500"
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleAddToCart(prod)}
+                className="mt-2 px-4 py-2 bg-gray-800 text-white rounded hover:bg-red-800 cursor-pointer"
+              >
+                Añadir al carrito
+              </button>
             </div>
           ))}
         </div>
