@@ -3,7 +3,13 @@ import { useState, useEffect } from "react";
 import { questions } from "../lib/questions";
 import { products } from "../lib/products";
 import { db, auth } from "../lib/firebase";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  Timestamp,
+  doc,
+  setDoc,
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Login from "./Login";
 
@@ -13,6 +19,7 @@ export default function TestApplication() {
   const [result, setResult] = useState(null);
   const [user, setUser] = useState(null);
   const [quantities, setQuantities] = useState({});
+  const [totalPrice, setTotalPrice] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -51,6 +58,13 @@ export default function TestApplication() {
         timestamp: Timestamp.now(),
       });
       setResult(final);
+
+      const recommended = getRecommendedProducts(final);
+      const initialTotal = recommended.reduce((acc, prod) => {
+        const qty = quantities[prod.id] || 1;
+        return acc + prod.price * qty;
+      }, 0);
+      setTotalPrice(initialTotal);
     } catch (error) {
       console.error("Error al guardar en Firestore:", error);
     }
@@ -61,16 +75,42 @@ export default function TestApplication() {
   };
 
   const handleQuantityChange = (productId, delta) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [productId]: Math.max(1, (prev[productId] || 1) + delta),
-    }));
+    setQuantities((prev) => {
+      const newQty = Math.max(1, (prev[productId] || 1) + delta);
+      const newQuantities = { ...prev, [productId]: newQty };
+
+      if (result) {
+        const recommended = getRecommendedProducts(result);
+        const newTotal = recommended.reduce((acc, prod) => {
+          const qty = newQuantities[prod.id] || 1;
+          return acc + prod.price * qty;
+        }, 0);
+        setTotalPrice(newTotal);
+      }
+
+      return newQuantities;
+    });
   };
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = async (product) => {
     const quantity = quantities[product.id] || 1;
-    console.log("Añadido al carrito:", product.name, "Cantidad:", quantity);
-    // Lógica para guardar el carrito en Firestore
+    if (!user) return;
+
+    try {
+      const cartItemRef = doc(db, "cart", `${user.uid}_${product.id}`);
+      await setDoc(cartItemRef, {
+        userId: user.uid,
+        productId: product.id,
+        name: product.name,
+        img: product.img,
+        quantity,
+        price: product.price,
+        addedAt: Timestamp.now(),
+      });
+      console.log("Producto agregado al carrito:", product.name);
+    } catch (error) {
+      console.error("Error al agregar al carrito:", error);
+    }
   };
 
   if (!user) {
@@ -108,7 +148,8 @@ export default function TestApplication() {
           ¡Test Completado!
         </h2>
         <p className="text-lg text-gray-700 mb-6">
-          Tu tipo de piel es: <strong className="capitalize">{result}</strong>
+          Tu tipo de piel es:{" "}
+          <strong className="capitalize">{result}</strong>
         </p>
 
         <h3 className="text-xl text-gray-500 font-semibold mb-2">
@@ -121,7 +162,17 @@ export default function TestApplication() {
               className="border p-4 rounded shadow-sm bg-white space-y-2"
             >
               <h4 className="text-lg text-red-900 font-bold">{prod.name}</h4>
+
+              <img
+                src={prod.img}
+                alt={prod.name}
+                className="w-full h-48 object-contain rounded border"
+              />
+
               <p className="text-sm text-gray-600">{prod.description}</p>
+              <p className="text-xl text-red-800 font-semibold">
+                S/. {prod.price.toFixed(2)}
+              </p>
 
               <div className="flex items-center space-x-2">
                 <button
@@ -149,6 +200,9 @@ export default function TestApplication() {
               </button>
             </div>
           ))}
+          <p className="text-xl text-gray-800 font-bold text-right mt-4">
+            Total: S/. {totalPrice.toFixed(2)}
+          </p>
         </div>
       </div>
     );
