@@ -13,11 +13,11 @@ export async function POST(req) {
       mode: "payment",
       line_items: items.map((item) => ({
         price_data: {
-          currency: "pen", // soles peruanos
+          currency: "pen",
           product_data: {
             name: item.name,
           },
-          unit_amount: Math.round(item.price * 100), // Stripe trabaja en centavos
+          unit_amount: Math.round(item.price * 100),
         },
         quantity: item.quantity,
       })),
