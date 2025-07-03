@@ -1,4 +1,3 @@
-// src/app/cancel/page.jsx
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
 import CancelContent from "@/app/components/Cancel";

@@ -37,7 +37,6 @@ export default function SuccessPage() {
           0
         );
 
-        // Enviar correo con Resend
         await fetch("/api/send-confirmation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -49,7 +48,6 @@ export default function SuccessPage() {
           }),
         });
 
-        // Borrar los productos del carrito
         const deletions = snapshot.docs.map((doc) => deleteDoc(doc.ref));
         await Promise.all(deletions);
 
